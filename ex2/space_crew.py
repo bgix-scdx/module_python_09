@@ -1,7 +1,6 @@
 from enum import Enum
 from pydantic import model_validator, BaseModel, ValidationError, Field
 from pydantic_core import PydanticCustomError
-from typing import List
 
 
 class Rank(Enum):
@@ -70,15 +69,34 @@ class SpaceMission(BaseModel):
                 line_errors=[{'type': PydanticCustomError("crew", "Inactive"),
                               'input': is_active}]
             )
+        print("==============================")
+        print("Valid mission created: ")
+        print(f"Mission: {self.mission_name}")
+        print(f"ID: {self.mission_id}")
+        print(f"Duration: {self.duration} days")
+        print(f"Budget ${self.budget_million}m")
+        print(f"Crew size: {len(self.crew)}")
+        print("Crew members: ")
+        for member in self.crew:
+            print(f" - {member.name} ({member.rank.value}) - "
+                  f"{member.specialization}")
+        print("\n==============================")
         return self
 
+
 try:
-    jef = CrewMember(member_id="JE01", name="JEFF", rank=Rank.captain, age=21,
-                     specialization="Baka", years_experience=2, is_active=True)
-    claude = CrewMember(member_id="JE01", name="JEFF", rank=Rank.cadet, age=24,
-                     specialization="Cook", years_experience=6, is_active=True)
-    SpaceMission(mission_id=".Space0", mission_name="Bakus Amogus",
-                destination="Space", crew=[jef, claude], mission_status="Funny",
-                budget_million=500.0, launch_date=25121221, duration=385)
+    jef = CrewMember(member_id="JE01", name="Jeff", rank=Rank.captain, age=21,
+                     specialization="Lead", years_experience=2, is_active=True)
+    claude = CrewMember(member_id="CL01", name="Claude", rank=Rank.cadet,
+                        age=24, specialization="Cook", years_experience=7,
+                        is_active=True)
+    marie = CrewMember(member_id="MA01", name="Marie", rank=Rank.lieutenant,
+                       age=24, specialization="Steering", years_experience=6,
+                       is_active=True)
+
+    SpaceMission(mission_id="M.Space0", mission_name="Bakus Amogus",
+                 destination="Space", crew=[jef, claude, marie],
+                 mission_status="Funny",
+                 budget_million=500.0, launch_date=25121221, duration=385,)
 except ValidationError as err:
     print(err)
