@@ -32,6 +32,7 @@ class SpaceStation(BaseModel):
             print(f"Operational: {self.Operational}")
             print("\n==================================")
             return self
+        return self
 
 
 if __name__ == "__main__":
