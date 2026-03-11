@@ -1,4 +1,5 @@
 from pydantic import model_validator, BaseModel, ValidationError, Field
+from pydantic_core import PydanticCustomError
 from typing import Optional
 import enum
 
@@ -11,26 +12,32 @@ class ContactType(enum.Enum):
 
 
 class AlienContact(BaseModel):
-    contact_id: str
+    contact_id: str = Field(min_length=5, max_length=15)
     timestamp: int
     location: str = Field(min_length=3, max_length=100)
     contact_type: ContactType
     signal_strength: float
-    duration_minutes: int
+    duration_minutes: int = Field(ge=1, le=1440)
     witness_count: int = Field(ge=1, le=100)
     message_received: Optional[str]
     is_verified: bool = False
 
     @model_validator(mode='after')
     def validate_contact(self):
-        if (
-             len(self.contact_id) < 5 or len(self.contact_id) > 15
-             and self.contact_id[0] != 'A' or self.contact_id[1] != 'C'):
-            print("Invalid contact ID")
-        elif self.duration_minutes / 60 >= 24:
-            print("Duration cannot exceed 24 hours.")
+        if (self.contact_id[0] != 'A' or self.contact_id[1] != 'C'):
+            raise ValidationError.from_exception_data(
+                title="Invalid ID",
+                line_errors=[{'type': PydanticCustomError("ID",
+                              "ID need to start with AC"),
+                              'input': self.contact_id}]
+            )
         elif self.signal_strength < 7 and not self.message_received:
-            print("Signal could not be recieved")
+            raise ValidationError.from_exception_data(
+                title="Invalid Strenght",
+                line_errors=[{'type': PydanticCustomError("ID",
+                              "Not enough strength for the signal"),
+                              'input': self.signal_strength}]
+            )
         else:
             print("======================================")
             print("Valid Contact Report: ")
@@ -52,15 +59,15 @@ try:
                  contact_type=ContactType.RADIO,
                  signal_strength=7.5, duration_minutes=345, witness_count=3,
                  message_received="Hello World!", is_verified=True)
-    AlienContact(contact_id="AC.67", timestamp=69696969,
+    AlienContact(contact_id="AB.67", timestamp=69696969,
                  location="Arecibo Observatory",
                  contact_type=ContactType.RADIO,
-                 signal_strength=7.5, duration_minutes=345, witness_count=0,
+                 signal_strength=7.5, duration_minutes=345, witness_count=10,
                  message_received="Hello World!", is_verified=True)
     AlienContact(contact_id=0, timestamp=69696969,
                  location="Arecibo Observatory",
                  contact_type=ContactType.RADIO,
                  signal_strength=7.5, duration_minutes=345, witness_count=3,
                  message_received="Hello World!", is_verified=True)
-except ValidationError:
-    print("ValidationError, class not validated.")
+except ValidationError as e:
+    print("ValidationError, class not validated.", e)
